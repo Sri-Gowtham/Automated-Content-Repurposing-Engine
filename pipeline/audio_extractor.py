@@ -1,34 +1,21 @@
 import os
-from moviepy import AudioFileClip
-
+import subprocess
 
 def extract_audio(video_path: str, output_dir: str = "uploads") -> str:
-    """
-    Extract audio from a video file using moviepy and save as a .wav file.
-
-    Args:
-        video_path: Absolute or relative path to the input video file.
-        output_dir: Directory where the extracted .wav will be saved.
-
-    Returns:
-        Path to the saved .wav file.
-
-    Raises:
-        RuntimeError: If audio extraction fails for any reason.
-    """
     print(f"Extracting audio from {video_path}...")
-
+    if not os.path.exists(video_path):
+        raise FileNotFoundError(f"Video not found: {video_path}")
+    os.makedirs(output_dir, exist_ok=True)
+    base = os.path.splitext(os.path.basename(video_path))[0]
+    out_path = os.path.join(output_dir, f"{base}_audio.wav")
     try:
-        os.makedirs(output_dir, exist_ok=True)
-
-        video_filename = os.path.splitext(os.path.basename(video_path))[0]
-        output_path = os.path.join(output_dir, f"{video_filename}_audio.wav")
-
-        audio_clip = AudioFileClip(video_path)
-        audio_clip.write_audiofile(output_path, fps=16000, nbytes=2, codec="pcm_s16le", logger=None)
-        audio_clip.close()
-
-        return output_path
-
-    except Exception as e:
-        raise RuntimeError(f"Audio extraction failed for '{video_path}': {e}") from e
+        subprocess.run([
+            "ffmpeg", "-y", "-i", video_path,
+            "-vn", "-acodec", "pcm_s16le",
+            "-ar", "16000", "-ac", "1",
+            out_path
+        ], check=True, capture_output=True)
+        print(f"Audio saved: {out_path}")
+        return out_path
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Audio extraction failed: {e.stderr.decode()}")
