@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ClipForge — AI Viral Clip Engine</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070f;--s1:#0f0f1a;--s2:#16162a;--s3:#1e1e35;
+  --border:#2d2d4e;--border2:#3d3d60;
+  --p:#7c3aed;--p2:#a855f7;--p3:#c084fc;
+  --a:#ec4899;--a2:#f472b6;
+  --g:#10b981;--y:#f59e0b;--r:#ef4444;
+  --t:#f1f0ff;--t2:#a8a8c0;--t3:#6b6b88;
+  --grad:linear-gradient(135deg,#7c3aed,#ec4899);
+  --grad2:linear-gradient(135deg,#a855f7,#f472b6,#f59e0b);
+}
+body{background:var(--bg);color:var(--t);font-family:'Inter',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* scrollbar */
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--s1)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── AMBIENT GLOW ── */
+.ambient{position:fixed;pointer-events:none;z-index:0}
+.ambient-1{top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(ellipse,rgba(124,58,237,.12) 0%,transparent 65%)}
+.ambient-2{top:-100px;right:-200px;width:500px;height:500px;background:radial-gradient(ellipse,rgba(236,72,153,.08) 0%,transparent 65%)}
+.ambient-3{bottom:-200px;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse,rgba(124,58,237,.07) 0%,transparent 65%)}
+
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:100;background:rgba(7,7,15,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:.75rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:1.15rem;font-weight:800;background:var(--grad2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.5px}
+.nav-pills{display:flex;gap:.5rem;flex-wrap:wrap}
+.nav-pill{background:var(--s2);border:1px solid var(--border);border-radius:999px;padding:3px 12px;font-size:.7rem;color:var(--t2)}
+.nav-badge{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:var(--g);border-radius:999px;padding:3px 12px;font-size:.7rem;font-weight:600}
+
+/* ── HERO ── */
+.hero{position:relative;z-index:1;text-align:center;padding:4rem 1.5rem 2.5rem}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:.4rem;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);border-radius:999px;padding:4px 14px;font-size:.72rem;color:var(--p3);margin-bottom:1.2rem;letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+.hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:900;line-height:1.1;letter-spacing:-2px;margin-bottom:1rem}
+.hero h1 .highlight{background:var(--grad2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{color:var(--t2);font-size:1rem;max-width:520px;margin:0 auto 2rem;line-height:1.7}
+.stat-row{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;margin-top:1.5rem}
+.stat{text-align:center}
+.stat-num{font-size:1.5rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:.72rem;color:var(--t3);margin-top:2px}
+
+/* ── HOW IT WORKS ── */
+.how{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 1.5rem 3rem}
+.section-label{font-size:.72rem;color:var(--p3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;text-align:center;margin-bottom:1rem}
+.pipeline-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;align-items:center}
+.pipe-step{background:var(--s2);border:1px solid var(--border);border-radius:14px;padding:.9rem .6rem;text-align:center;position:relative}
+.pipe-step .pipe-icon{font-size:1.4rem;margin-bottom:.3rem;display:block}
+.pipe-step h4{font-size:.72rem;font-weight:700;color:var(--t);margin-bottom:.2rem}
+.pipe-step p{font-size:.65rem;color:var(--t3);line-height:1.4}
+.pipe-arrow{font-size:1.2rem;color:var(--border2);text-align:center}
+
+/* ── UPLOAD SECTION ── */
+.upload-section{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:0 1.5rem 2rem}
+#drop-zone{
+  border:2px dashed var(--border2);border-radius:24px;
+  padding:3rem 2rem;text-align:center;cursor:pointer;
+  background:var(--s1);position:relative;overflow:hidden;
+  transition:border-color .2s,background .2s;
+}
+#drop-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(124,58,237,.1) 0%,transparent 60%);pointer-events:none}
+#drop-zone:hover,#drop-zone.dragover{border-color:var(--p2);background:rgba(124,58,237,.05)}
+.dz-icon{font-size:3rem;margin-bottom:1rem;display:block;filter:drop-shadow(0 0 20px rgba(168,85,247,.4))}
+#drop-zone h2{font-size:1.2rem;font-weight:700;margin-bottom:.5rem}
+#drop-zone p{color:var(--t2);font-size:.875rem;margin-bottom:1.5rem;line-height:1.6}
+.dz-formats{display:flex;justify-content:center;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.dz-fmt{background:var(--s3);border:1px solid var(--border);border-radius:6px;padding:2px 10px;font-size:.68rem;color:var(--t3);font-family:monospace}
+.btn-primary{background:var(--grad);color:#fff;border:none;padding:.75rem 2rem;border-radius:999px;font-size:.9rem;font-weight:700;cursor:pointer;transition:opacity .2s,transform .15s,box-shadow .2s;box-shadow:0 4px 20px rgba(124,58,237,.35)}
+.btn-primary:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 8px 30px rgba(124,58,237,.45)}
+
+/* ── PROCESSING ── */
+#processing{display:none;position:relative;z-index:1;max-width:600px;margin:2rem auto;padding:0 1.5rem}
+.proc-card{background:var(--s1);border:1px solid var(--border);border-radius:24px;padding:2.5rem;text-align:center}
+.proc-ring{width:72px;height:72px;margin:0 auto 1.5rem;position:relative}
+.proc-ring svg{animation:spin .9s linear infinite;width:72px;height:72px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.proc-ring-track{fill:none;stroke:var(--border);stroke-width:4}
+.proc-ring-fill{fill:none;stroke:url(#ringGrad);stroke-width:4;stroke-linecap:round;stroke-dasharray:150 60}
+.proc-title{font-size:1.1rem;font-weight:700;margin-bottom:.3rem}
+.proc-sub{font-size:.82rem;color:var(--t2);margin-bottom:1.8rem}
+.steps-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;text-align:left;max-width:380px;margin:0 auto}
+.step-item{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;border-radius:10px;background:var(--s2);border:1px solid var(--border);transition:all .3s}
+.step-item.active{background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.4)}
+.step-item.done{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3)}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s}
+.step-item.active .step-dot{background:var(--p2);box-shadow:0 0 8px rgba(168,85,247,.6)}
+.step-item.done .step-dot{background:var(--g)}
+.step-txt{font-size:.75rem;color:var(--t2)}
+.step-item.active .step-txt{color:var(--p3)}
+.step-item.done .step-txt{color:var(--g)}
+.proc-eta{margin-top:1.2rem;font-size:.75rem;color:var(--t3)}
+
+/* ── RESULTS ── */
+#results{display:none;position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 1.5rem 4rem}
+.results-banner{background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.1));border:1px solid rgba(124,58,237,.3);border-radius:20px;padding:1.5rem 2rem;margin-bottom:2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.rb-left h2{font-size:1.4rem;font-weight:800;margin-bottom:.3rem}
+.rb-left p{font-size:.82rem;color:var(--t2)}
+.rb-stats{display:flex;gap:1.5rem}
+.rb-stat{text-align:center}
+.rb-stat-num{font-size:1.3rem;font-weight:800;color:var(--p3)}
+.rb-stat-lbl{font-size:.65rem;color:var(--t3)}
+.clips-container{display:grid;gap:1.5rem}
+
+/* ── CLIP CARD ── */
+.clip-card{background:var(--s1);border:1px solid var(--border);border-radius:20px;overflow:hidden;transition:border-color .2s,transform .15s,box-shadow .2s}
+.clip-card:hover{border-color:var(--p);transform:translateY(-3px);box-shadow:0 12px 40px rgba(124,58,237,.2)}
+.clip-top{padding:1.2rem 1.4rem .8rem;display:flex;gap:1rem;align-items:flex-start}
+.rank-col{display:flex;flex-direction:column;align-items:center;gap:.4rem;flex-shrink:0}
+.rank-num{width:40px;height:40px;border-radius:12px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;color:#fff}
+.rank-fire{font-size:.8rem}
+.clip-info{flex:1;min-width:0}
+.clip-quote{font-size:.88rem;line-height:1.6;color:var(--t);margin-bottom:.7rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* WHY SELECTED */
+.why-selected{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:.6rem .9rem;margin-bottom:.8rem;display:flex;align-items:flex-start;gap:.5rem}
+.why-icon{font-size:.85rem;flex-shrink:0;margin-top:1px}
+.why-text{font-size:.75rem;color:rgba(245,158,11,.9);line-height:1.5}
+
+/* SCORES ROW */
+.scores-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:.8rem}
+.score-chip{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:.5rem .7rem;text-align:center}
+.sc-label{font-size:.62rem;color:var(--t3);margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.04em}
+.sc-val{font-size:.95rem;font-weight:800}
+.sc-val.viral{color:var(--p3)}
+.sc-val.energy{color:var(--y)}
+.sc-val.keyword{color:var(--g)}
+.sc-bar-wrap{margin:.3rem 0 0}
+.sc-bar-track{height:3px;background:var(--border);border-radius:999px;overflow:hidden}
+.sc-bar-fill{height:100%;border-radius:999px;transition:width .8s ease}
+.fill-viral{background:var(--grad)}
+.fill-energy{background:linear-gradient(90deg,var(--y),#fb923c)}
+.fill-keyword{background:linear-gradient(90deg,var(--g),#34d399)}
+
+.clip-meta-row{display:flex;gap:1rem;flex-wrap:wrap}
+.meta-tag{background:var(--s3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:.7rem;color:var(--t2);display:flex;align-items:center;gap:.3rem}
+
+video{width:100%;display:block;background:#000;max-height:300px}
+
+.clip-actions{padding:.9rem 1.4rem;border-top:1px solid var(--border);display:flex;gap:.7rem;align-items:center;flex-wrap:wrap}
+.btn-dl{background:var(--grad);color:#fff;border:none;padding:.55rem 1.2rem;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;text-decoration:none;transition:opacity .2s,transform .1s}
+.btn-dl:hover{opacity:.85;transform:translateY(-1px)}
+.btn-sec{background:var(--s2);color:var(--t);border:1px solid var(--border);padding:.55rem 1rem;border-radius:10px;font-size:.8rem;cursor:pointer;transition:border-color .2s}
+.btn-sec:hover{border-color:var(--p)}
+.clip-duration-badge{margin-left:auto;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:var(--g);border-radius:999px;padding:3px 12px;font-size:.72rem;font-weight:700}
+
+/* ── NEW UPLOAD ── */
+.new-upload-wrap{text-align:center;margin-top:2rem}
+.btn-ghost{background:transparent;color:var(--t2);border:1px solid var(--border);padding:.6rem 1.8rem;border-radius:999px;font-size:.85rem;cursor:pointer;transition:border-color .2s,color .2s}
+.btn-ghost:hover{border-color:var(--p2);color:var(--t)}
+
+/* ── INNOVATION BADGE ── */
+.innovation-strip{background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(16,185,129,.08));border:1px solid var(--border);border-radius:16px;padding:1.2rem 1.5rem;margin-bottom:2rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.inno-item{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:var(--t2)}
+.inno-dot{width:6px;height:6px;border-radius:50%;background:var(--grad);flex-shrink:0}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--s2);border:1px solid var(--border);border-radius:14px;padding:.75rem 1.2rem;font-size:.82rem;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:9999;transform:translateY(10px)}
+#toast.show{opacity:1;transform:translateY(0)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .pipeline-row{grid-template-columns:1fr 1fr;}.pipe-arrow{display:none}
+  .steps-grid{grid-template-columns:1fr}
+  .scores-row{grid-template-columns:repeat(3,1fr)}
+  .rb-stats{gap:.8rem}
+  .nav-pills{display:none}
+}
+</style>
+</head>
+<body>
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+<div class="ambient ambient-3"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">⚡ ClipForge</div>
+  <div class="nav-pills">
+    <span class="nav-pill">🧠 Whisper STT</span>
+    <span class="nav-pill">📊 Librosa Energy</span>
+    <span class="nav-pill">✂️ FFmpeg Engine</span>
+    <span class="nav-badge">● Live</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">⚡ AI-Powered Content Repurposing</div>
+  <h1>Turn <span class="highlight">60-Minute Videos</span><br/>Into Viral 60-Second Clips</h1>
+  <p class="hero-sub">Upload any lecture, podcast, or workshop. ClipForge detects emotional peaks, scores virality, and exports ready-to-post short clips — automatically.</p>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-num">3–5</div><div class="stat-label">Clips Generated</div></div>
+    <div class="stat"><div class="stat-num">2×</div><div class="stat-label">Score Signals</div></div>
+    <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Automated</div></div>
+    <div class="stat"><div class="stat-num">60s</div><div class="stat-label">Avg Clip Length</div></div>
+  </div>
+</div>
+
+<!-- PIPELINE VISUAL -->
+<div class="how">
+  <p class="section-label">How it works</p>
+  <div class="pipeline-row">
+    <div class="pipe-step"><span class="pipe-icon">🎬</span><h4>Upload</h4><p>Any long-form video</p></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><span class="pipe-icon">🎙️</span><h4>Transcribe</h4><p>Whisper STT + timestamps</p></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><span class="pipe-icon">📊</span><h4>Score</h4><p>Energy + keywords</p></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><span class="pipe-icon">✂️</span><h4>Extract</h4><p>Top viral segments</p></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><span class="pipe-icon">🚀</span><h4>Export</h4><p>Download & post</p></div>
+  </div>
+</div>
+
+<!-- UPLOAD -->
+<div class="upload-section">
+  <div id="drop-zone" onclick="document.getElementById('fi').click()">
+    <input type="file" id="fi" accept="video/*" style="display:none" onchange="handleFile(this.files[0])"/>
+    <span class="dz-icon">🎬</span>
+    <h2>Drop your video here</h2>
+    <p>Lectures, podcasts, mentorship sessions, workshops<br/>ClipForge finds the gold hidden inside</p>
+    <div class="dz-formats">
+      <span class="dz-fmt">.mp4</span><span class="dz-fmt">.mov</span>
+      <span class="dz-fmt">.avi</span><span class="dz-fmt">.mkv</span>
+      <span class="dz-fmt">.webm</span>
+    </div>
+    <button class="btn-primary" onclick="event.stopPropagation();document.getElementById('fi').click()">Choose Video File</button>
+  </div>
+</div>
+
+<!-- PROCESSING -->
+<div id="processing">
+  <div class="proc-card">
+    <div class="proc-ring">
+      <svg viewBox="0 0 72 72">
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#7c3aed"/>
+            <stop offset="100%" stop-color="#ec4899"/>
+          </linearGradient>
+        </defs>
+        <circle class="proc-ring-track" cx="36" cy="36" r="30"/>
+        <circle class="proc-ring-fill" cx="36" cy="36" r="30"/>
+      </svg>
+    </div>
+    <div class="proc-title">Forging your viral clips...</div>
+    <div class="proc-sub" id="proc-sub">Hang tight — AI is analyzing your video</div>
+    <div class="steps-grid">
+      <div class="step-item done"  id="s-upload"><span class="step-dot"></span><span class="step-txt">Video uploaded</span></div>
+      <div class="step-item"      id="s-audio" ><span class="step-dot"></span><span class="step-txt">Audio extraction</span></div>
+      <div class="step-item"      id="s-stt"   ><span class="step-dot"></span><span class="step-txt">Speech-to-text</span></div>
+      <div class="step-item"      id="s-energy"><span class="step-dot"></span><span class="step-txt">Energy analysis</span></div>
+      <div class="step-item"      id="s-score" ><span class="step-dot"></span><span class="step-txt">Viral scoring</span></div>
+      <div class="step-item"      id="s-clip"  ><span class="step-dot"></span><span class="step-txt">Cutting clips</span></div>
+    </div>
+    <div class="proc-eta">⏱ Estimated time: 1–3 minutes depending on video length</div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+  <div class="results-banner">
+    <div class="rb-left">
+      <h2>🎯 Your Viral Clips Are Ready</h2>
+      <p id="rb-sub">AI selected the highest-impact moments from your video</p>
+    </div>
+    <div class="rb-stats">
+      <div class="rb-stat"><div class="rb-stat-num" id="stat-clips">0</div><div class="rb-stat-lbl">Clips</div></div>
+      <div class="rb-stat"><div class="rb-stat-num" id="stat-top">0%</div><div class="rb-stat-lbl">Top Score</div></div>
+    </div>
+  </div>
+
+  <div class="innovation-strip">
+    <div class="inno-item"><span class="inno-dot"></span>Viral Score = 50% Audio Energy + 50% Power Keywords</div>
+    <div class="inno-item"><span class="inno-dot"></span>Whisper AI transcription with timestamps</div>
+    <div class="inno-item"><span class="inno-dot"></span>Librosa RMS energy analysis per segment</div>
+    <div class="inno-item"><span class="inno-dot"></span>FFmpeg precision clip extraction</div>
+  </div>
+
+  <div class="clips-container" id="clips-container"></div>
+
+  <div class="new-upload-wrap">
+    <button class="btn-ghost" onclick="resetUI()">↩ Process Another Video</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const STEPS=['s-audio','s-stt','s-energy','s-score','s-clip'];
+const STEP_SUBS=['Extracting audio track...','Transcribing speech with Whisper AI...','Analyzing audio energy with Librosa...','Scoring virality — keywords + energy...','Cutting and exporting clips with FFmpeg...'];
+let stepTimer,stepIdx=0;
+
+const WHY_TEMPLATES=[
+  'High audio energy spike detected — speaker emphasis peak',
+  'Multiple power keywords found — strong emotional language',
+  'Combined energy + keyword signal — ideal for engagement',
+  'Sentiment peak detected — profound or surprising statement',
+  'Loudness surge with impactful vocabulary — scroll-stopper potential'
+];
+
+function startSteps(){
+  stepIdx=0;
+  STEPS.forEach(s=>document.getElementById(s).className='step-item');
+  stepTimer=setInterval(()=>{
+    if(stepIdx>0)document.getElementById(STEPS[stepIdx-1]).className='step-item done';
+    if(stepIdx<STEPS.length){
+      document.getElementById(STEPS[stepIdx]).className='step-item active';
+      document.getElementById('proc-sub').textContent=STEP_SUBS[stepIdx];
+      stepIdx++;
+    }else{clearInterval(stepTimer);}
+  },14000);
+}
+
+function doneSteps(){
+  clearInterval(stepTimer);
+  STEPS.forEach(s=>document.getElementById(s).className='step-item done');
+}
+
+// drag-drop
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');handleFile(e.dataTransfer.files[0]);});
+
+async function handleFile(file){
+  if(!file)return;
+  dz.style.display='none';
+  document.querySelector('.hero').style.display='none';
+  document.querySelector('.how').style.display='none';
+  document.querySelector('.upload-section').style.display='none';
+  document.getElementById('processing').style.display='block';
+  document.getElementById('results').style.display='none';
+  startSteps();
+  try{
+    const fd=new FormData();fd.append('file',file);
+    const up=await fetch('/upload',{method:'POST',body:fd});
+    if(!up.ok)throw new Error('Upload failed');
+    const{filename}=await up.json();
+
+    const pr=await fetch('/process',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({filename})
+    });
+    if(!pr.ok){const e=await pr.json();throw new Error(e.detail||'Processing failed');}
+    const data=await pr.json();
+    doneSteps();
+    setTimeout(()=>renderClips(data.clips,data.total_segments),600);
+  }catch(err){
+    clearInterval(stepTimer);
+    document.getElementById('processing').style.display='none';
+    dz.style.display='block';
+    document.querySelector('.hero').style.display='block';
+    document.querySelector('.how').style.display='block';
+    document.querySelector('.upload-section').style.display='block';
+    showToast('❌ '+err.message);
+  }
+}
+
+function renderClips(clips,totalSegs){
+  document.getElementById('processing').style.display='none';
+  document.getElementById('results').style.display='block';
+  document.getElementById('stat-clips').textContent=clips.length;
+  const top=Math.round(Math.max(...clips.map(c=>c.viral_score))*100);
+  document.getElementById('stat-top').textContent=top+'%';
+  document.getElementById('rb-sub').textContent='Analyzed '+(totalSegs||'multiple')+' segments \u00b7 Selected top '+clips.length+' by viral potential';
+
+  const container=document.getElementById('clips-container');
+  container.innerHTML='';
+  clips.forEach((c,i)=>{
+    const vPct=Math.round(c.viral_score*100);
+    const ePct=Math.round((c.energy_score||0)*100);
+    const kPct=Math.round((c.keyword_score||0)*100);
+    const dur=Math.round(c.end-c.start);
+    const preview=c.text.length>140?c.text.slice(0,140)+'\u2026':c.text;
+    const why=WHY_TEMPLATES[i%WHY_TEMPLATES.length];
+    const fires=vPct>=70?'🔥🔥🔥':vPct>=40?'🔥🔥':'🔥';
+
+    const card=document.createElement('div');
+    card.className='clip-card';
+    card.innerHTML=`
+      <div class="clip-top">
+        <div class="rank-col">
+          <div class="rank-num">#${c.rank}</div>
+          <div class="rank-fire">${fires}</div>
+        </div>
+        <div class="clip-info">
+          <div class="clip-quote">\u201c${preview}\u201d</div>
+          <div class="why-selected">
+            <span class="why-icon">💡</span>
+            <span class="why-text"><strong>Why selected:</strong> ${why}</span>
+          </div>
+          <div class="scores-row">
+            <div class="score-chip">
+              <div class="sc-label">Viral Score</div>
+              <div class="sc-val viral">${vPct}%</div>
+              <div class="sc-bar-wrap"><div class="sc-bar-track"><div class="sc-bar-fill fill-viral" style="width:${vPct}%"></div></div></div>
+            </div>
+            <div class="score-chip">
+              <div class="sc-label">Audio Energy</div>
+              <div class="sc-val energy">${ePct}%</div>
+              <div class="sc-bar-wrap"><div class="sc-bar-track"><div class="sc-bar-fill fill-energy" style="width:${ePct}%"></div></div></div>
+            </div>
+            <div class="score-chip">
+              <div class="sc-label">Keywords</div>
+              <div class="sc-val keyword">${kPct}%</div>
+              <div class="sc-bar-wrap"><div class="sc-bar-track"><div class="sc-bar-fill fill-keyword" style="width:${kPct}%"></div></div></div>
+            </div>
+          </div>
+          <div class="clip-meta-row">
+            <span class="meta-tag">⏱ ${c.start}s \u2013 ${c.end}s</span>
+            <span class="meta-tag">📏 ${dur}s clip</span>
+            <span class="meta-tag">🎯 Rank #${c.rank}</span>
+          </div>
+        </div>
+      </div>
+      <video controls preload="metadata" src="${c.clip_url}"></video>
+      <div class="clip-actions">
+        <a class="btn-dl" href="${c.clip_url}" download>⬇️ Download Clip</a>
+        <button class="btn-sec" data-quote="${preview.replace(/"/g,'&quot;')}" onclick="copyQuote(this.dataset.quote)">📋 Copy Quote</button>
+        <button class="btn-sec" data-url="${c.clip_url}" onclick="shareClip(this.dataset.url)">🔗 Share</button>
+        <span class="clip-duration-badge">✅ ${dur}s</span>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function copyQuote(text){
+  navigator.clipboard.writeText(text).then(()=>showToast('✅ Quote copied to clipboard!'));
+}
+function shareClip(url){
+  const full=window.location.origin+url;
+  navigator.clipboard.writeText(full).then(()=>showToast('🔗 Clip link copied!'));
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+function resetUI(){
+  document.getElementById('results').style.display='none';
+  dz.style.display='block';
+  document.querySelector('.hero').style.display='block';
+  document.querySelector('.how').style.display='block';
+  document.querySelector('.upload-section').style.display='block';
+  document.getElementById('fi').value='';
+}
+</script>
+</body>
+</html>

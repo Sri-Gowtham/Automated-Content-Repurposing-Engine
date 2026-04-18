@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+openai-whisper
+moviepy
+librosa
+mediapipe
+opencv-python-headless
+ffmpeg-python
+numpy
+yt-dlp
