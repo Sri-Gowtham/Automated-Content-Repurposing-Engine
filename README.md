@@ -5,7 +5,7 @@
 ![ClipForge Demo](https://img.shields.io/badge/Status-Live-brightgreen) ![Python](https://img.shields.io/badge/Python-3.10+-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green) ![License](https://img.shields.io/badge/License-MIT-purple)
 
 ## 🎬 Demo Video
-> 📹 **[Watch Live Demo on Google Drive](YOUR_DEMO_LINK_HERE)**
+> 📹 **[Watch Live Demo on Google Drive](https://drive.google.com/file/d/1-lEvp3iOpVkgd_dgc-nZzt5WlE9QdKq-/view?usp=drive_link)**
 
 ---
 
